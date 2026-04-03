@@ -7,6 +7,17 @@ cd "$WORKDIR"
 # ─── PHP ini ─────────────────────────────────────────────────────────────────
 cp "$WORKDIR/docker/php/php.ini" "$PHP_INI_DIR/conf.d/espocrm.ini"
 
+# ─── Writable directories & permissions (always, every start) ────────────────
+mkdir -p \
+    "$WORKDIR/data/logs" \
+    "$WORKDIR/data/cache" \
+    "$WORKDIR/data/upload" \
+    "$WORKDIR/data/tmp"
+
+for dir in data custom; do
+    [ -d "$WORKDIR/$dir" ] && chown -R www-data:www-data "$WORKDIR/$dir"
+done
+
 # ─── Skip install steps for secondary containers (cron, daemon…) ─────────────
 if [ "${SKIP_INSTALL:-false}" = "true" ]; then
     echo "[entrypoint] SKIP_INSTALL=true, skipping install steps."
@@ -32,14 +43,8 @@ else
     echo "[entrypoint] client/lib/ already present, skipping frontend build."
 fi
 
-# ─── Writable directories & permissions ─────────────────────────────────────
-mkdir -p \
-    "$WORKDIR/data/logs" \
-    "$WORKDIR/data/cache" \
-    "$WORKDIR/data/upload" \
-    "$WORKDIR/data/tmp"
-
-for dir in data custom vendor client/lib client/css client/modules; do
+# ─── Permissions for generated assets ────────────────────────────────────────
+for dir in vendor client/lib client/css client/modules; do
     [ -d "$WORKDIR/$dir" ] && chown -R www-data:www-data "$WORKDIR/$dir"
 done
 
