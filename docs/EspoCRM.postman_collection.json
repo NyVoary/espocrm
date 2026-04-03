@@ -43,11 +43,9 @@
           ],
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Espo-Authorization", "value": "{{base64_credentials}}" }
-            ],
+            "header": [],
             "url": "{{base_url}}/App/user",
-            "description": "Récupère les infos de l'utilisateur connecté et sauvegarde le token.\n\nNote : utilise l'onglet Authorization > Basic Auth avec tes credentials."
+            "description": "Récupère les infos de l'utilisateur connecté (utilise le Basic Auth de la collection)."
           }
         },
         {
