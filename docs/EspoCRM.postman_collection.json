@@ -1,0 +1,572 @@
+{
+  "info": {
+    "name": "EspoCRM API",
+    "description": "Collection complète de l'API REST EspoCRM v9. Base URL : http://localhost/api/v1\n\nAuthentification : Basic Auth (admin / ton mot de passe)\nOU token : header 'Espo-Authorization' = base64(user:password)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost/api/v1" },
+    { "key": "username", "value": "admin" },
+    { "key": "password", "value": "admin" },
+    { "key": "account_id", "value": "" },
+    { "key": "contact_id", "value": "" },
+    { "key": "lead_id", "value": "" },
+    { "key": "opportunity_id", "value": "" },
+    { "key": "token", "value": "" }
+  ],
+  "auth": {
+    "type": "basic",
+    "basic": [
+      { "key": "username", "value": "{{username}}" },
+      { "key": "password", "value": "{{password}}" }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login (obtenir un token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    console.log('Token saved:', json.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Espo-Authorization", "value": "{{base64_credentials}}" }
+            ],
+            "url": "{{base_url}}/App/user",
+            "description": "Récupère les infos de l'utilisateur connecté et sauvegarde le token.\n\nNote : utilise l'onglet Authorization > Basic Auth avec tes credentials."
+          }
+        },
+        {
+          "name": "Logout (détruire le token)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/App/destroyAuthToken",
+            "description": "Invalide le token de session courant."
+          }
+        }
+      ]
+    },
+    {
+      "name": "App",
+      "item": [
+        {
+          "name": "Settings (public)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{base_url}}/Settings",
+            "description": "Paramètres publics de l'app (pas d'auth requise)."
+          }
+        },
+        {
+          "name": "About",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/App/about",
+            "description": "Version et informations de l'application."
+          }
+        },
+        {
+          "name": "Metadata",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/Metadata",
+            "description": "Métadonnées complètes (entités, champs, relations). Réponse volumineuse."
+          }
+        },
+        {
+          "name": "OpenAPI Spec",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/OpenApi",
+            "description": "Spécification OpenAPI générée dynamiquement."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Contacts",
+      "item": [
+        {
+          "name": "Lister les contacts",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/Contact?maxSize=20&offset=0&orderBy=createdAt&order=desc",
+              "host": ["{{base_url}}"],
+              "path": ["Contact"],
+              "query": [
+                { "key": "maxSize", "value": "20" },
+                { "key": "offset", "value": "0" },
+                { "key": "orderBy", "value": "createdAt" },
+                { "key": "order", "value": "desc" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Créer un contact",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set('contact_id', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Jean\",\n  \"lastName\": \"Rakoto\",\n  \"emailAddress\": \"jean.rakoto@example.mg\",\n  \"phoneNumber\": \"+261 20 00 00001\",\n  \"title\": \"Directeur\"\n}"
+            },
+            "url": "{{base_url}}/Contact"
+          }
+        },
+        {
+          "name": "Lire un contact",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/Contact/{{contact_id}}"
+          }
+        },
+        {
+          "name": "Modifier un contact",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Directeur Général\"\n}"
+            },
+            "url": "{{base_url}}/Contact/{{contact_id}}"
+          }
+        },
+        {
+          "name": "Supprimer un contact",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/Contact/{{contact_id}}"
+          }
+        },
+        {
+          "name": "Rechercher des contacts",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/Contact?searchParams={\"textFilter\":\"Jean\"}",
+              "host": ["{{base_url}}"],
+              "path": ["Contact"],
+              "query": [
+                { "key": "searchParams", "value": "{\"textFilter\":\"Jean\"}" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Comptes (Accounts)",
+      "item": [
+        {
+          "name": "Lister les comptes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/Account?maxSize=20&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["Account"],
+              "query": [
+                { "key": "maxSize", "value": "20" },
+                { "key": "offset", "value": "0" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Créer un compte",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set('account_id', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Entreprise Rakoto SA\",\n  \"website\": \"https://rakoto.mg\",\n  \"emailAddress\": \"contact@rakoto.mg\",\n  \"phoneNumber\": \"+261 20 00 00000\",\n  \"industry\": \"Technology\",\n  \"type\": \"Customer\"\n}"
+            },
+            "url": "{{base_url}}/Account"
+          }
+        },
+        {
+          "name": "Lire un compte",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/Account/{{account_id}}"
+          }
+        },
+        {
+          "name": "Contacts liés à un compte",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/Account/{{account_id}}/contacts"
+          }
+        },
+        {
+          "name": "Opportunités liées à un compte",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/Account/{{account_id}}/opportunities"
+          }
+        },
+        {
+          "name": "Supprimer un compte",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/Account/{{account_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Leads",
+      "item": [
+        {
+          "name": "Lister les leads",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/Lead?maxSize=20",
+              "host": ["{{base_url}}"],
+              "path": ["Lead"],
+              "query": [{ "key": "maxSize", "value": "20" }]
+            }
+          }
+        },
+        {
+          "name": "Créer un lead",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set('lead_id', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Marie\",\n  \"lastName\": \"Rasoa\",\n  \"emailAddress\": \"marie.rasoa@example.mg\",\n  \"accountName\": \"Rasoa Corp\",\n  \"status\": \"New\",\n  \"source\": \"Web Site\"\n}"
+            },
+            "url": "{{base_url}}/Lead"
+          }
+        },
+        {
+          "name": "Convertir un lead",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contact\": { \"create\": true },\n  \"account\": { \"create\": true },\n  \"opportunity\": { \"create\": false }\n}"
+            },
+            "url": "{{base_url}}/Lead/{{lead_id}}/action/convert",
+            "description": "Convertit un lead en Contact + Account (+ optionnellement Opportunity)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Opportunités",
+      "item": [
+        {
+          "name": "Lister les opportunités",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/Opportunity?maxSize=20&orderBy=closeDate&order=asc",
+              "host": ["{{base_url}}"],
+              "path": ["Opportunity"],
+              "query": [
+                { "key": "maxSize", "value": "20" },
+                { "key": "orderBy", "value": "closeDate" },
+                { "key": "order", "value": "asc" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Créer une opportunité",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set('opportunity_id', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Projet ERP Madagascar\",\n  \"stage\": \"Prospecting\",\n  \"amount\": 15000,\n  \"closeDate\": \"2026-06-30\",\n  \"probability\": 20\n}"
+            },
+            "url": "{{base_url}}/Opportunity"
+          }
+        },
+        {
+          "name": "Kanban des opportunités",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/Kanban/Opportunity",
+            "description": "Retourne les opportunités groupées par stage pour la vue Kanban."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tâches & Activités",
+      "item": [
+        {
+          "name": "Lister les tâches",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/Task?maxSize=20&orderBy=dateEnd&order=asc",
+              "host": ["{{base_url}}"],
+              "path": ["Task"],
+              "query": [
+                { "key": "maxSize", "value": "20" },
+                { "key": "orderBy", "value": "dateEnd" },
+                { "key": "order", "value": "asc" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Créer une tâche",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Appeler le client\",\n  \"status\": \"Not Started\",\n  \"priority\": \"High\",\n  \"dateEnd\": \"2026-04-10\"\n}"
+            },
+            "url": "{{base_url}}/Task"
+          }
+        },
+        {
+          "name": "Lister les réunions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/Meeting?maxSize=20",
+              "host": ["{{base_url}}"],
+              "path": ["Meeting"],
+              "query": [{ "key": "maxSize", "value": "20" }]
+            }
+          }
+        },
+        {
+          "name": "Lister les appels",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/Call?maxSize=20",
+              "host": ["{{base_url}}"],
+              "path": ["Call"],
+              "query": [{ "key": "maxSize", "value": "20" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Emails",
+      "item": [
+        {
+          "name": "Lister les emails",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/Email?maxSize=20",
+              "host": ["{{base_url}}"],
+              "path": ["Email"],
+              "query": [{ "key": "maxSize", "value": "20" }]
+            }
+          }
+        },
+        {
+          "name": "Envoyer un email",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Test depuis EspoCRM API\",\n  \"body\": \"<p>Bonjour,</p><p>Ceci est un email de test.</p>\",\n  \"to\": \"destinataire@example.com\",\n  \"isHtml\": true\n}"
+            },
+            "url": "{{base_url}}/Email",
+            "description": "Crée et envoie un email. Nécessite un compte email configuré dans l'admin."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Utilisateurs",
+      "item": [
+        {
+          "name": "Lister les utilisateurs",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/User?maxSize=20",
+              "host": ["{{base_url}}"],
+              "path": ["User"],
+              "query": [{ "key": "maxSize", "value": "20" }]
+            }
+          }
+        },
+        {
+          "name": "Créer un utilisateur",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"haja\",\n  \"firstName\": \"Haja\",\n  \"lastName\": \"Rakotondrabe\",\n  \"emailAddress\": \"haja@example.mg\",\n  \"password\": \"Haja@1234\",\n  \"type\": \"regular\"\n}"
+            },
+            "url": "{{base_url}}/User"
+          }
+        },
+        {
+          "name": "Mon profil (utilisateur connecté)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/App/user"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications & Stream",
+      "item": [
+        {
+          "name": "Mon stream (activité récente)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/Stream?maxSize=20",
+              "host": ["{{base_url}}"],
+              "path": ["Stream"],
+              "query": [{ "key": "maxSize", "value": "20" }]
+            }
+          }
+        },
+        {
+          "name": "Stream global",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/GlobalStream"
+          }
+        },
+        {
+          "name": "Groupes de notifications",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/Notification/group"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Reconstruire l'app (rebuild)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/Admin/rebuild",
+            "description": "Reconstruit le cache, régénère les métadonnées. À lancer après des modifications."
+          }
+        },
+        {
+          "name": "Vider le cache",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/Admin/clearCache"
+          }
+        },
+        {
+          "name": "Lister les jobs planifiés",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/Admin/jobs"
+          }
+        },
+        {
+          "name": "Lister les jobs (ScheduledJob)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/ScheduledJob"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Recherche globale",
+      "item": [
+        {
+          "name": "Recherche globale",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/GlobalSearch?q=rakoto",
+              "host": ["{{base_url}}"],
+              "path": ["GlobalSearch"],
+              "query": [{ "key": "q", "value": "rakoto" }]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
