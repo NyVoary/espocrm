@@ -1,0 +1,13 @@
+node_modules
+vendor
+build
+data/logs
+data/cache
+data/upload
+data/tmp
+data/config.php
+data/config-internal.php
+.git
+.idea
+.vscode
+tests

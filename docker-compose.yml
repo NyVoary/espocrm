@@ -1,0 +1,69 @@
+services:
+
+  nginx:
+    image: nginx:1.25-alpine
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    volumes:
+      - .:/var/www/html:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/var/www/html
+      - espo_data:/var/www/html/data
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-espocrm}
+      DB_USER: ${DB_USER:-espocrm}
+      DB_PASSWORD: ${DB_PASSWORD:-espocrm_pass}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  cron:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["sh", "-c", "while true; do php /var/www/html/cron.php > /dev/null 2>&1; sleep 60; done"]
+    volumes:
+      - .:/var/www/html
+      - espo_data:/var/www/html/data
+    environment:
+      SKIP_INSTALL: "true"
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-espocrm}
+      DB_USER: ${DB_USER:-espocrm}
+      DB_PASSWORD: ${DB_PASSWORD:-espocrm_pass}
+    depends_on:
+      - app
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-espocrm}
+      MYSQL_USER: ${DB_USER:-espocrm}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-espocrm_pass}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  espo_data:
+  db_data:
