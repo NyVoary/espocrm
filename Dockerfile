@@ -13,6 +13,7 @@ RUN apk add --no-cache \
     linux-headers \
     nodejs \
     npm \
+    git \
     cronie \
     su-exec
 

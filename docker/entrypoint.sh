@@ -14,11 +14,11 @@ if [ "${SKIP_INSTALL:-false}" = "true" ]; then
 fi
 
 # ─── PHP dependencies ────────────────────────────────────────────────────────
-if [ ! -d "$WORKDIR/vendor" ]; then
+if [ ! -f "$WORKDIR/vendor/autoload.php" ]; then
     echo "[entrypoint] Installing PHP dependencies (composer install)..."
     composer install --no-dev --optimize-autoloader --no-interaction
 else
-    echo "[entrypoint] vendor/ already present, skipping composer install."
+    echo "[entrypoint] vendor/autoload.php already present, skipping composer install."
 fi
 
 # ─── Frontend assets ─────────────────────────────────────────────────────────
