@@ -35,6 +35,11 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+# Fix PHP-FPM: /proc/self/fd/2 is not accessible on Docker Desktop (Windows)
+RUN for f in /usr/local/etc/php-fpm.conf /usr/local/etc/php-fpm.d/docker.conf; do \
+        [ -f "$f" ] && sed -i 's|/proc/self/fd/2|/tmp/php-fpm.log|g' "$f" || true; \
+    done
+
 # Create working directory
 WORKDIR /var/www/html
 

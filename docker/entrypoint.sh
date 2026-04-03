@@ -10,7 +10,7 @@ cp "$WORKDIR/docker/php/php.ini" "$PHP_INI_DIR/conf.d/espocrm.ini"
 # ─── Skip install steps for secondary containers (cron, daemon…) ─────────────
 if [ "${SKIP_INSTALL:-false}" = "true" ]; then
     echo "[entrypoint] SKIP_INSTALL=true, skipping install steps."
-    exec su-exec www-data "$@"
+    exec "$@"
 fi
 
 # ─── PHP dependencies ────────────────────────────────────────────────────────
@@ -44,4 +44,4 @@ for dir in data custom vendor client/lib client/css client/modules; do
 done
 
 echo "[entrypoint] Ready. Starting: $*"
-exec su-exec www-data "$@"
+exec "$@"
